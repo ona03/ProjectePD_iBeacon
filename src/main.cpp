@@ -73,29 +73,38 @@ class MyCallbacks: public BLECharacteristicCallbacks {
     }
 };
 
-void initService(BLECharacteristic *pCharacteristic, BLEServer *pServer, const char *serviceUUID, const char *characteristicUUID) {
-  BLEService *pService = pServer->createService(BLEUUID(serviceUUID));
+void initService(BLECharacteristic *& pCharacteristic, BLEServer *& pServer, const char *CHARACTERISTIC_UUID, const char *SERVICE_UUID) {
+  BLEAdvertising* pAdvertising;
+  pAdvertising = pServer->getAdvertising();
+  pAdvertising->stop();
 
+  // Create the BLE Service
+  BLEService *pService = pServer->createService(BLEUUID(SERVICE_UUID));
+
+  // Create a BLE Characteristic
   pCharacteristic = pService->createCharacteristic(
-                    BLEUUID(characteristicUUID),
-                    BLECharacteristic::PROPERTY_READ   |
-                    BLECharacteristic::PROPERTY_WRITE  |
-                    BLECharacteristic::PROPERTY_NOTIFY
-                  );
+                      CHARACTERISTIC_UUID,
+                      BLECharacteristic::PROPERTY_READ   |
+                      BLECharacteristic::PROPERTY_WRITE  |
+                      BLECharacteristic::PROPERTY_NOTIFY
+                    );
   pCharacteristic->setCallbacks(new MyCallbacks());
   pCharacteristic->addDescriptor(new BLE2902());
 
-  pServer->getAdvertising()->addServiceUUID(BLEUUID(serviceUUID));
+  pAdvertising->addServiceUUID(BLEUUID(SERVICE_UUID));
 
+  // Start the service
   pService->start();
+
+  pAdvertising->start();
 }
 
-void initBeacon(BLEServer *pServer, const char *beaconUUIDRev, uint16_t MId, uint8_t Flag) {
+void initBeacon(BLEServer *& pServer, const char *beaconUUIDRev, uint8_t Flag) {
   BLEAdvertising *pAdvertising = pServer->getAdvertising();
   pAdvertising->stop();
 
   BLEBeacon myBeacon;
-  myBeacon.setManufacturerId(MId);
+  myBeacon.setManufacturerId(0x1A);
   //myBeacon.setMajor(1001);
   //myBeacon.setMinor(2001);
   myBeacon.setSignalPower(0xc5);
@@ -120,26 +129,37 @@ void setup() {
   pServer_1 = BLEDevice::createServer();
   pServer_1->setCallbacks(new MyServerCallbacks());
 
-  Serial.println("pas2");
+  if (!BLEDevice::init(DEVICE_NAME_1)) {
+  Serial.println("Error initializing BLEDevice1");
+  while (1);
+}
 
   BLEDevice::init(DEVICE_NAME_2);
   pServer_2 = BLEDevice::createServer();
   pServer_2->setCallbacks(new MyServerCallbacks());
 
-  Serial.println("pas2");
+  if (!BLEDevice::init(DEVICE_NAME_2)) {
+    Serial.println("Error initializing BLEDevice2");
+    while (1);
+  }
 
-  uint16_t MId1=0x1111, MId2=0x2222;
+  //uint16_t MId1=0x1111, MId2=0x2222;
   uint8_t Flag1=0x1A, Flag2=0x1F;
 
-  initService(pCharacteristic_1, pServer_1, SERVICE_UUID_1, CHARACTERISTIC_UUID_1);
-  Serial.println("service1 started");
-  initService(pCharacteristic_2, pServer_2, SERVICE_UUID_2, CHARACTERISTIC_UUID_2);
+  //Serial.print("MID1: ");Serial.println(MId1);
+  Serial.print("Flag1: ");Serial.println(Flag1);
+  //Serial.print("MID2: ");Serial.println(MId2);
+  Serial.print("Flag2: ");Serial.println(Flag2);
 
+  initService(pCharacteristic_1, pServer_1, CHARACTERISTIC_UUID_1, SERVICE_UUID_1);
+  Serial.println("service1 started");
+  
+  initService(pCharacteristic_2, pServer_2, CHARACTERISTIC_UUID_2, SERVICE_UUID_2);
   Serial.println("service2 started");
 
-  initBeacon(pServer_1, BEACON_UUID_REV_1, MId1, Flag1);
+  initBeacon(pServer_1, BEACON_UUID_REV_1, Flag1);
   Serial.println("iBeacon1 funciona");
-  initBeacon(pServer_2, BEACON_UUID_REV_2, MId2, Flag2);
+  initBeacon(pServer_2, BEACON_UUID_REV_2, Flag2);
 
   Serial.println("iBeacon2 funciona");
 }
