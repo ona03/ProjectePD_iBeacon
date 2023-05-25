@@ -1,5 +1,4 @@
 #include <Arduino.h>
-
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
@@ -8,9 +7,6 @@
 
 #include <WiFi.h>
 #include <WebServer.h>
-#include <algorithm>
-#include <cstdint>
-#include <string>
 
 #define DEVICE_NAME            "ESP32"
 #define SERVICE_UUID           "7A0247E7-8E88-409B-A959-AB5092DDB03E"
@@ -18,20 +14,16 @@
 #define BEACON_UUID_REV        "A134D0B2-1DA2-1BA7-C94C-E8E00C9F7A2D"
 #define CHARACTERISTIC_UUID    "82258BAA-DF72-47E8-99BC-B73D7ECD08A5"
 
-//const char* ssid = "MIWIFI_6vNU_5G";
-//const char* password = "sCTemMat";
-const char* ssid = "MOVISTAR_D84E";
-const char* password = ";9o2a3ei5RY#!:";
+const char* ssid = "MIWIFI_6vNU_5G";
+const char* password = "sCTemMat";
 WebServer server(80);
 void handle_root();
-String web="https://concepto.de/tecnologia/";
-IPAddress ip;
-String ipString;
+
+extern String web;
 
 BLEServer *pServer;
 BLECharacteristic *pCharacteristic;
 bool deviceConnected = false;
-//uint8_t value = 0;
 
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
@@ -67,6 +59,7 @@ class MyCallbacks: public BLECharacteristicCallbacks {
       }
     }
 };
+
 
 void init_service() {
   BLEAdvertising* pAdvertising;
@@ -116,7 +109,6 @@ void init_beacon() {
 
 void setup() {
   Serial.begin(115200);
-
   Serial.println("Try Connecting to ");
   Serial.println(ssid);
   
@@ -129,17 +121,12 @@ void setup() {
   Serial.println("");
   Serial.println("WiFi connected successfully");
   Serial.print("Got IP: ");
-  Serial.println(WiFi.localIP());
-  ip = WiFi.localIP();
-  ipString = ip.toString();
+  Serial.println(WiFi.localIP()); 
   server.on("/", handle_root);
   server.begin();
   Serial.println("HTTP server started");
-  //Serial.print("stringIP: ");
-  //Serial.println(ipString);
   delay(100);
-
-  Serial.println();
+  
   Serial.println("Initializing BLE...");
   Serial.flush();
 
@@ -156,13 +143,11 @@ void setup() {
 void loop() {
   server.handleClient();
   if (deviceConnected) {
-    pCharacteristic->setValue( &myBytes, myBytes.length());
-    pCharacteristic->notify();
+    pCharacteristic->setValue("192.168.1.134");
   }
-  delay(5000);
+  delay(2000);
 }
 
 void handle_root() {
   server.send(200, "text/html", web);
 }
-

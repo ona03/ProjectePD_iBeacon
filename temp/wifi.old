@@ -10,7 +10,7 @@ const char* password = "sCTemMat";
 WebServer server(80);
 void handle_root();
 
-String web="https://concepto.de/tecnologia/";
+extern String web;
 IPAddress ip;
 String ipString;
 
