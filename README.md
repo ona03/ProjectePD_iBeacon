@@ -163,6 +163,7 @@ void loop() {
 <div align="justify">
 Esta primera parte está formada por la definición de los UUID de nuestro ESP32, al principio del código, además de las librerias adientes. A partir de allí, declaramos punteros que nos servirán para acabar de configurar el microprocesador y el servicio bluetooth, en las funciones `void init_service()` y `void init_beacon()`. La clase `MyServerCallbacks` se encarga de ver cuando haya algun usuario conectado al dispositivo BLE mientras que la de `MyCallbacks` se centra en la funcionalidad añadida de poder cambiar la dirección URL de destino una vez introducida la cadena de caracteres que funciona como contraseña. En el `setup()`, inicializamos el Serial por defecto para comunicar mensajes por el terminal y el Serial2 para la conexión UART. Este último, lo configuramos para que el ESP32 envíe por el pin 16 y reciba por el número 17. A continuación, creamos el servicio bluetooth, lo inicializamos, así como la conexión iBeacon y sacamos por el puerto serie que se ha resultado exitoso todo el proceso. Finalmente, dentro del `loop()`, enviamos la dirección como una cadena de caracteres por el Serial2 y al final del mensaje, añadimos un 0 para maracar que se ha terminado. Explicado el código implementado, el diagrama de flujo es el siguiente:
 </div>
+
 ```mermaid
 graph TD
     A[BLUETOOTH]-->D
@@ -328,6 +329,7 @@ String tail = "'\"/>\n\
 <div align="justify">
 En esta segunda parte del código nos centramos en la generación de un servidor web. Utilizamos las librerías `Wifi.h` y `WebServer.h` para ello. Declaramos la dirección URL a la que finalmente nos redireccionaremos al entrar al web server. Si este ESP32 no recibe datos a través de la conexión UART, por defecto se le enviará a `google.com`. Declaramos las variables para nuestra Wifi, el WebServer, y las cabeceras de las funciones que explicaremos más adelante. Además, incluimos dos `String` que formarán el fichero html de espera. Dentro del `setup()`, creamos una tarea que lea la URL recibida por el Serial2 via conexión UART, inicializada justo antes con los mismos pines que el primer ESP32. Para generar el servidor web, utilizamos nuestras variables de Wifi y llamamos la función `handle_root()`, que se encarga de juntar los `String` que forman finalmente el html completo con la dirección URL. La función ``void read_url_task(void * parameter)`` es la que creamos como tarea, de modo que actualice la URL si la que recibe por UART es distinta de la que tiene. Finalmente, en el bucle principial, mostramos la web local a partir de la IP de la red WiFi. El diagrama de flujo sería como el siguiente:
 </div>
+
 ```mermaid
 graph TD
     B[Inicializar]
