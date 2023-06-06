@@ -5,17 +5,18 @@
 #include <BLE2902.h>
 #include <BLEBeacon.h>
 
-#define DEVICE_NAME            "ESP32_2"
-#define SERVICE_UUID           "C2991F06-3A4F-4FD9-AE39-29A5B4AED672"
-#define BEACON_UUID            "A6FAD736-98C0-4E48-9A55-29C0A3A48D34"
-#define BEACON_UUID_REV        "34D48DA4-A3C0-5529-9A48-C09836D7FA6A"
-#define CHARACTERISTIC_UUID    "B68D5314-6BB4-49F6-9F02-0E8266329B9C"
-#define MAJOR                  1002
-#define MINOR                  2002
+#define DEVICE_NAME            "ESP32"
+#define SERVICE_UUID           "7A0247E7-8E88-409B-A959-AB5092DDB03E"
+#define BEACON_UUID            "2D7A9F0C-E0E8-4CC9-A71B-A21DB2D034A1"
+#define BEACON_UUID_REV        "A134D0B2-1DA2-1BA7-C94C-E8E00C9F7A2D"
+#define CHARACTERISTIC_UUID    "82258BAA-DF72-47E8-99BC-B73D7ECD08A5"
 
 BLEServer *pServer;
 BLECharacteristic *pCharacteristic;
 bool deviceConnected = false;
+bool mode_set_url = false;
+
+std::string stURL="http://github.com";
 
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
@@ -35,23 +36,42 @@ class MyServerCallbacks: public BLEServerCallbacks {
     }
 };
 
+
+//************************************************************
 class MyCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
-      std::string rxValue = pCharacteristic->getValue();
 
-      if (rxValue.length() > 0) {
-        Serial.println("*********");
-        Serial.print("Received Value: ");
-        for (int i = 0; i < rxValue.length(); i++) {
-          Serial.print(rxValue[i]);
-        }
-        Serial.println();
-        Serial.println("*********");
+      std::string tmp;
+
+      tmp=pCharacteristic->getValue();
+
+      if (mode_set_url) {
+        mode_set_url=false;
+
+        stURL=tmp;
+        
+        Serial.print("Saved URL: ");
+        Serial.println(stURL.c_str());
 
       }
+      else {
+        if (tmp=="password") {
+            mode_set_url=true;
+
+            Serial.println("Waiting URL to save...");
+        }
+      }
+
+    }
+
+    void onRead(BLECharacteristic *pCharacteristic) {
+      
+      pCharacteristic->setValue(stURL);
+      pCharacteristic->notify();
+
     }
 };
-
+//*******************************************************************
 
 void init_service() {
   BLEAdvertising* pAdvertising;
@@ -86,11 +106,13 @@ void init_beacon() {
   // iBeacon
   BLEBeacon myBeacon;
   myBeacon.setManufacturerId(0x4c00);
+  myBeacon.setMajor(5);
+  myBeacon.setMinor(88);
   myBeacon.setSignalPower(0xc5);
   myBeacon.setProximityUUID(BLEUUID(BEACON_UUID_REV));
 
   BLEAdvertisementData advertisementData;
-  advertisementData.setFlags(0x1F);
+  advertisementData.setFlags(0x1A);
   advertisementData.setManufacturerData(myBeacon.getData());
   pAdvertising->setAdvertisementData(advertisementData);
 
@@ -103,6 +125,12 @@ void setup() {
   Serial.println("Initializing...");
   Serial.flush();
 
+//serial 2
+
+  Serial2.begin(9600, SERIAL_8N1, 17, 16);
+
+//Bluetooth 
+
   BLEDevice::init(DEVICE_NAME);
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
@@ -111,15 +139,12 @@ void setup() {
   init_beacon();
 
   Serial.println("iBeacon + service defined and advertising!");
+
 }
 
 void loop() {
-  if (deviceConnected) {
-    //Serial.printf("*** NOTIFY: %d ***\n", value);
-    pCharacteristic->setValue("192.168.1.134");
-    //if (pCharacteristic->)
-    //pCharacteristic->notify();
-    //value++;
-  }
-  delay(2000);
+  //connexión uart
+  Serial2.write(stURL.c_str()); //mensaje
+  Serial2.write(0); //fin mensaje
+  delay(1000);
 }
